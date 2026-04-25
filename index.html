@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Hues & Clues</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:system-ui,sans-serif;background:#0e0e0e;color:#fff;min-height:100vh;}
+#app{max-width:700px;margin:0 auto;padding:16px;}
+
+.logo{font-size:26px;font-weight:700;letter-spacing:-1px;margin-bottom:4px;}
+.logo span{color:#f0c040;}
+.tagline{font-size:13px;color:#666;margin-bottom:24px;}
+
+.card{background:#1a1a1a;border:0.5px solid #2a2a2a;border-radius:12px;padding:20px;margin-bottom:14px;}
+.card-title{font-size:11px;text-transform:uppercase;letter-spacing:0.12em;color:#666;margin-bottom:14px;}
+
+input[type=text]{width:100%;background:#111;border:0.5px solid #3a3a3a;border-radius:8px;padding:10px 14px;color:#fff;font-size:15px;outline:none;margin-bottom:10px;}
+input[type=text]:focus{border-color:#666;}
+input[type=text]::placeholder{color:#444;}
+
+.btn{display:inline-block;padding:10px 22px;border-radius:100px;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all 0.15s;letter-spacing:0.01em;}
+.btn-y{background:#f0c040;color:#111;}
+.btn-y:hover{background:#ffd060;}
+.btn-g{background:#1D9E75;color:#fff;}
+.btn-g:hover{background:#22b585;}
+.btn-ghost{background:#222;color:#ccc;border:0.5px solid #333;}
+.btn-ghost:hover{background:#2a2a2a;}
+.btn:disabled{opacity:0.35;cursor:not-allowed;}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+
+.room-badge{display:inline-block;background:#222;border:0.5px solid #333;border-radius:8px;padding:4px 14px;font-size:20px;font-weight:700;letter-spacing:4px;color:#f0c040;font-family:monospace;margin-bottom:8px;}
+.copy-btn{font-size:12px;color:#555;cursor:pointer;margin-left:10px;text-decoration:underline;}
+.copy-btn:hover{color:#aaa;}
+
+.players-list{display:flex;flex-direction:column;gap:6px;}
+.player-row{display:flex;align-items:center;gap:10px;padding:8px 12px;background:#111;border-radius:8px;font-size:14px;}
+.player-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.player-you{font-size:11px;color:#555;margin-left:auto;}
+.player-score{font-size:13px;font-weight:600;margin-left:auto;}
+
+.phase-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.phase-tag{font-size:12px;background:#222;padding:4px 12px;border-radius:100px;color:#aaa;}
+.round-tag{font-size:12px;color:#555;}
+
+.grid-scroll{overflow-x:auto;margin-bottom:14px;}
+.grid-inner{display:inline-block;}
+.col-hdrs{display:flex;margin-left:22px;margin-bottom:2px;}
+.col-h{width:19px;text-align:center;font-size:8px;color:#555;flex-shrink:0;}
+.grid-row-el{display:flex;align-items:center;margin-bottom:1px;}
+.row-lbl{width:20px;font-size:9px;color:#555;text-align:center;flex-shrink:0;}
+.cell{width:19px;height:19px;flex-shrink:0;cursor:pointer;border:1px solid #0e0e0e;border-radius:2px;transition:transform 0.1s;}
+.cell:hover{transform:scale(1.4);z-index:10;position:relative;border-color:#fff!important;}
+.cell.my-hover{border:2px solid rgba(255,255,255,0.6)!important;transform:scale(1.2);z-index:5;position:relative;}
+.cell.confirmed{border-width:2px!important;transform:scale(1.15);z-index:4;position:relative;}
+.cell.target-reveal{border:3px solid #fff!important;transform:scale(1.3);z-index:8;position:relative;}
+
+.clue-words{font-size:22px;font-weight:700;color:#f0c040;letter-spacing:-0.3px;margin-bottom:4px;}
+.clue-sub{font-size:13px;color:#666;}
+
+.info-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.coord-pill{background:#222;border:0.5px solid #333;border-radius:6px;padding:3px 12px;font-size:14px;font-weight:600;color:#f0c040;font-family:monospace;}
+.swatch-prev{width:32px;height:32px;border-radius:6px;border:1px solid #333;flex-shrink:0;}
+
+.score-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;}
+.score-card{background:#111;border-radius:8px;padding:12px;text-align:center;}
+.sc-name{font-size:12px;margin-bottom:4px;}
+.sc-val{font-size:24px;font-weight:700;}
+
+.result-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:0.5px solid #222;font-size:14px;}
+.result-pts{font-weight:700;}
+
+.waiting-msg{text-align:center;padding:20px;color:#555;font-size:14px;}
+.pulse{animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+
+.winner-big{font-size:32px;font-weight:700;margin-bottom:6px;}
+.winner-sub{font-size:14px;color:#777;}
+
+.error-msg{background:#2a1010;border:0.5px solid #5a2020;border-radius:8px;padding:10px 14px;color:#f09595;font-size:13px;margin-bottom:10px;}
+
+.how-to{font-size:13px;color:#555;line-height:1.8;}
+.how-to b{color:#aaa;}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="logo">HUES <span>&</span> CLUES</div>
+  <div class="tagline">Online multiplayer color guessing game</div>
+  <div id="root"></div>
+</div>
+<script>
+const ROWS = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P'];
+const COLS = Array.from({length:30},(_,i)=>i+1);
+
+let ws, myIndex, myRoom;
+let state = { phase: 'lobby', players: [], giverIndex: 0, round: 0, totalRounds: 0, clue1:'', clue2:'', guesses:{}, targetCell:null };
+let selectedCell = null;
+let guessConfirmed = false;
+let targetSelectedByGiver = null;
+
+function hsl(row, col) {
+  const ri = ROWS.indexOf(row) / (ROWS.length-1);
+  const ci = (col-1) / (COLS.length-1);
+  return `hsl(${Math.round(ci*300)},${Math.round(20+(1-Math.abs(ri-0.35))*80)}%,${Math.round(15+(1-ri)*65)}%)`;
+}
+
+function render(html) { document.getElementById('root').innerHTML = html; }
+
+function showLobbyJoin() {
+  render(`
+    <div class="card">
+      <div class="card-title">Create or join a room</div>
+      <input type="text" id="nameIn" placeholder="Your name" maxlength="20"/>
+      <input type="text" id="roomIn" placeholder="Room code (leave blank to create)" maxlength="6" style="text-transform:uppercase"/>
+      <div id="err"></div>
+      <div class="btn-row">
+        <button class="btn btn-y" onclick="joinOrCreate()">Let's play</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">How to play</div>
+      <div class="how-to">
+        The <b>clue giver</b> secretly picks a color on the grid and gives <b>two word clues</b>.<br>
+        Everyone else clicks their best guess on the grid.<br>
+        <b>3pts</b> exact · <b>2pts</b> adjacent · <b>1pt</b> nearby · <b>0pts</b> off<br>
+        Clue giver earns <b>1pt</b> per exact guesser. Most points wins!
+      </div>
+    </div>`);
+}
+
+function joinOrCreate() {
+  const name = document.getElementById('nameIn').value.trim();
+  const room = document.getElementById('roomIn').value.trim().toUpperCase() || randomCode();
+  if (!name) { showErr('Enter your name!'); return; }
+  connectWS(name, room);
+}
+
+function showErr(msg) {
+  const el = document.getElementById('err');
+  if (el) el.innerHTML = `<div class="error-msg">${msg}</div>`;
+}
+
+function randomCode() {
+  return Math.random().toString(36).slice(2,6).toUpperCase();
+}
+
+function connectWS(name, roomId) {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  ws = new WebSocket(`${proto}://${location.host}`);
+  ws.onopen = () => ws.send(JSON.stringify({ type:'join', name, roomId }));
+  ws.onmessage = (e) => handleMsg(JSON.parse(e.data));
+  ws.onerror = () => render(`<div class="error-msg">Connection failed. Is the server running?</div>`);
+}
+
+function handleMsg(msg) {
+  if (msg.type === 'error') { showErr(msg.msg); return; }
+  if (msg.type === 'joined') {
+    myIndex = msg.playerIndex;
+    myRoom = msg.roomId;
+    showWaitingRoom();
+    return;
+  }
+  if (msg.type === 'players') { state.players = msg.players; if (state.phase==='lobby') showWaitingRoom(); return; }
+  if (msg.type === 'state') {
+    Object.assign(state, msg);
+    selectedCell = null;
+    guessConfirmed = false;
+    targetSelectedByGiver = null;
+    renderGame();
+    return;
+  }
+  if (msg.type === 'targetPicked') {
+    targetSelectedByGiver = true;
+    if (isGiver()) renderGame();
+    return;
+  }
+  if (msg.type === 'guessUpdate') {
+    state.guesses = msg.guesses;
+    if (msg.allDone) { } else renderGame();
+    return;
+  }
+  if (msg.type === 'ended') {
+    state.players = msg.players;
+    state.phase = 'ended';
+    renderEnd();
+    return;
+  }
+}
+
+function isGiver() { return myIndex === state.giverIndex; }
+function giver() { return state.players[state.giverIndex] || {}; }
+function me() { return state.players[myIndex] || {}; }
+
+function showWaitingRoom() {
+  const isHost = myIndex === 0;
+  const playerRows = state.players.map((p,i) =>
+    `<div class="player-row">
+      <div class="player-dot" style="background:${p.color}"></div>
+      <span>${p.name}</span>
+      ${i===myIndex?'<span class="player-you">you</span>':''}
+     </div>`).join('');
+  render(`
+    <div class="card">
+      <div class="card-title">Room</div>
+      <div class="room-badge">${myRoom}</div>
+      <span class="copy-btn" onclick="copyLink()">copy invite link</span>
+      <p style="font-size:13px;color:#555;margin-top:8px;margin-bottom:14px;">Share this code with friends. They enter it on the same page.</p>
+      <div class="card-title">Players (${state.players.length}/6)</div>
+      <div class="players-list">${playerRows}</div>
+      <div class="btn-row">
+        ${isHost ? `<button class="btn btn-y" onclick="startGame()" ${state.players.length<2?'disabled':''}>Start game</button>` : '<span style="color:#555;font-size:13px;" class="pulse">Waiting for host to start…</span>'}
+      </div>
+    </div>`);
+}
+
+function copyLink() {
+  const url = `${location.origin}?room=${myRoom}`;
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    if (btn) { btn.textContent = 'copied!'; setTimeout(()=>btn.textContent='copy invite link',2000); }
+  });
+}
+
+function startGame() { ws.send(JSON.stringify({ type:'start' })); }
+
+function renderGame() {
+  const { phase, players, giverIndex, round, totalRounds, clue1, clue2, guesses, targetCell } = state;
+  const g = players[giverIndex] || {};
+  const amGiver = isGiver();
+
+  let panelHtml = '';
+
+  if (phase === 'picking') {
+    if (amGiver) {
+      const t = targetSelectedByGiver && selectedCell;
+      const previewColor = t ? hsl(selectedCell.row, selectedCell.col) : '#2a2a2a';
+      const coord = selectedCell ? `${selectedCell.row}${selectedCell.col}` : '—';
+      panelHtml = `
+        <div class="card">
+          <div class="card-title">Pick your secret color — others can't see!</div>
+          <div class="info-row">
+            <div class="swatch-prev" style="background:${previewColor}"></div>
+            <div class="coord-pill">${coord}</div>
+          </div>
+          <input type="text" id="c1" placeholder="First word clue" maxlength="30"/>
+          <input type="text" id="c2" placeholder="Second word clue" maxlength="30"/>
+          <div class="btn-row">
+            <button class="btn btn-y" onclick="submitClues()" ${selectedCell?'':'disabled'}>Lock in & give clues</button>
+          </div>
+        </div>`;
+    } else {
+      panelHtml = `<div class="card"><div class="waiting-msg pulse">${g.name || 'The clue giver'} is picking a secret color…</div></div>`;
+    }
+  }
+
+  else if (phase === 'guessing') {
+    const myGuess = guesses[myIndex];
+    const totalGuessers = players.length - 1;
+    const doneCount = Object.keys(guesses).length;
+
+    if (amGiver) {
+      panelHtml = `
+        <div class="card">
+          <div class="clue-words">"${clue1}" &nbsp; "${clue2}"</div>
+          <div class="clue-sub">Waiting for ${totalGuessers - doneCount} more guess${totalGuessers - doneCount !== 1 ? 'es' : ''}…</div>
+          <div style="margin-top:12px;font-size:13px;color:#555;">${doneCount}/${totalGuessers} players have guessed</div>
+        </div>`;
+    } else if (myGuess) {
+      panelHtml = `
+        <div class="card">
+          <div class="clue-words">"${clue1}" &nbsp; "${clue2}"</div>
+          <div class="clue-sub" style="margin-bottom:10px;">Your guess is locked in at <span style="color:#f0c040;font-weight:600">${myGuess.row}${myGuess.col}</span></div>
+          <div style="font-size:13px;color:#555;">Waiting for others… ${doneCount}/${totalGuessers} done</div>
+        </div>`;
+    } else {
+      const sel = selectedCell;
+      panelHtml = `
+        <div class="card">
+          <div class="clue-words">"${clue1}" &nbsp; "${clue2}"</div>
+          <div class="clue-sub" style="margin-bottom:10px;">Click your best guess on the grid</div>
+          <div class="info-row">
+            <div class="swatch-prev" style="background:${sel ? hsl(sel.row,sel.col) : '#2a2a2a'}"></div>
+            <div class="coord-pill">${sel ? sel.row+sel.col : '—'}</div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-y" onclick="confirmGuess()" ${sel?'':'disabled'}>Lock in guess</button>
+          </div>
+        </div>`;
+    }
+  }
+
+  else if (phase === 'scoring') {
+    const tc = targetCell ? hsl(targetCell.row, targetCell.col) : '';
+    const coord = targetCell ? `${targetCell.row}${targetCell.col}` : '';
+
+    function dist(a,b) {
+      const rd = Math.abs(ROWS.indexOf(a.row)-ROWS.indexOf(b.row));
+      const cd = Math.abs(a.col-b.col);
+      return Math.max(rd,cd);
+    }
+    function pts(g,t) { const d=dist(g,t); return d===0?3:d===1?2:d===2?1:0; }
+
+    let rows = players.map((p,i) => {
+      if (i===giverIndex) return '';
+      const g = guesses[i];
+      const p2 = g ? pts(g, targetCell) : 0;
+      const coord2 = g ? g.row+g.col : '—';
+      return `<div class="result-row">
+        <span style="color:${p.color}">${p.name}${i===myIndex?' (you)':''}</span>
+        <span style="color:#555;font-size:13px;">${coord2}</span>
+        <span class="result-pts" style="color:${p2===3?'#50C878':p2>0?'#f0c040':'#555'}">${p2>0?'+'+p2+'pt':'0'}</span>
+      </div>`;
+    }).join('');
+
+    const isLast = round + 1 >= totalRounds;
+    panelHtml = `
+      <div class="card">
+        <div class="card-title">Target was <span style="display:inline-block;width:14px;height:14px;background:${tc};border-radius:3px;vertical-align:middle;margin:0 4px;"></span> <span class="coord-pill" style="font-size:13px">${coord}</span></div>
+        ${rows}
+        ${amGiver ? `<div class="btn-row"><button class="btn btn-y" onclick="nextRound()">${isLast?'See final scores':'Next round →'}</button></div>` : `<div style="color:#555;font-size:13px;margin-top:10px;" class="pulse">Waiting for ${g.name} to continue…</div>`}
+      </div>`;
+  }
+
+  const scoreRow = players.map((p,i)=>
+    `<div class="player-row" style="${i===giverIndex?'background:#1f1a00;border:0.5px solid #3a3010;':''}">
+      <div class="player-dot" style="background:${p.color}"></div>
+      <span style="color:${p.color}">${p.name}${i===myIndex?' (you)':''}</span>
+      ${i===giverIndex?'<span style="font-size:11px;color:#888;margin-left:4px;">giving</span>':''}
+      <span class="player-score" style="color:${p.color}">${p.score}pt</span>
+    </div>`).join('');
+
+  const gridHtml = buildGrid(phase, guesses, targetCell);
+
+  document.getElementById('root').innerHTML = `
+    <div class="phase-bar">
+      <span class="phase-tag">${phaseLabel(phase)}</span>
+      <span class="round-tag">Round ${round+1} of ${totalRounds}</span>
+    </div>
+    <div class="card" style="padding:12px;">
+      <div class="players-list" style="margin-bottom:0;">${scoreRow}</div>
+    </div>
+    <div class="grid-scroll">${gridHtml}</div>
+    ${panelHtml}`;
+
+  attachCellListeners(phase);
+}
+
+function phaseLabel(p) {
+  return {picking:'Picking color',guessing:'Guessing',scoring:'Scores',lobby:'Lobby',ended:'Game over'}[p]||p;
+}
+
+function buildGrid(phase, guesses, targetCell) {
+  let html = '<div class="grid-inner">';
+  html += '<div class="col-hdrs">' + COLS.map(c=>`<div class="col-h">${c}</div>`).join('') + '</div>';
+  ROWS.forEach(row => {
+    html += '<div class="grid-row-el">';
+    html += `<div class="row-lbl">${row}</div>`;
+    COLS.forEach(col => {
+      const bg = hsl(row, col);
+      let cls = 'cell';
+      let style = `background:${bg};`;
+      let border = '';
+
+      if (phase === 'guessing' || phase === 'scoring') {
+        Object.entries(guesses).forEach(([i, g]) => {
+          if (g && g.row===row && g.col===col) {
+            const p = state.players[parseInt(i)];
+            if (p) { cls += ' confirmed'; border = `border-color:${p.color}!important;`; }
+          }
+        });
+      }
+      if (phase === 'scoring' && targetCell && targetCell.row===row && targetCell.col===col) {
+        cls += ' target-reveal';
+        border = 'border-color:#fff!important;';
+      }
+
+      html += `<div class="${cls}" id="c-${row}-${col}" data-row="${row}" data-col="${col}" style="${style}${border}"></div>`;
+    });
+    html += '</div>';
+  });
+  html += '</div>';
+  return html;
+}
+
+function attachCellListeners(phase) {
+  document.querySelectorAll('.cell').forEach(el => {
+    el.addEventListener('click', () => {
+      const row = el.dataset.row;
+      const col = parseInt(el.dataset.col);
+      if (phase === 'picking' && isGiver()) {
+        document.querySelectorAll('.cell.my-hover').forEach(c=>c.classList.remove('my-hover'));
+        el.classList.add('my-hover');
+        selectedCell = {row, col};
+        targetSelectedByGiver = true;
+        ws.send(JSON.stringify({type:'pickTarget', cell:{row,col}}));
+        renderGame();
+      } else if (phase === 'guessing' && !isGiver() && !state.guesses[myIndex]) {
+        document.querySelectorAll('.cell.my-hover').forEach(c=>c.classList.remove('my-hover'));
+        el.classList.add('my-hover');
+        selectedCell = {row, col};
+        renderGame();
+        el.classList.add('my-hover');
+      }
+    });
+  });
+}
+
+function submitClues() {
+  const c1 = document.getElementById('c1')?.value.trim();
+  const c2 = document.getElementById('c2')?.value.trim();
+  if (!c1||!c2) { alert('Enter both clues!'); return; }
+  if (!selectedCell) { alert('Pick a color first!'); return; }
+  ws.send(JSON.stringify({type:'submitClues', clue1:c1, clue2:c2}));
+}
+
+function confirmGuess() {
+  if (!selectedCell) return;
+  ws.send(JSON.stringify({type:'guess', cell:selectedCell}));
+}
+
+function nextRound() { ws.send(JSON.stringify({type:'nextRound'})); }
+
+function renderEnd() {
+  const sorted = [...state.players].sort((a,b)=>b.score-a.score);
+  const winner = sorted[0];
+  const scoreCards = sorted.map(p=>`
+    <div class="score-card">
+      <div class="sc-name" style="color:${p.color}">${p.name}${p===winner?' 🏆':''}</div>
+      <div class="sc-val" style="color:${p.color}">${p.score}</div>
+    </div>`).join('');
+  render(`
+    <div style="text-align:center;padding:24px 0 16px;">
+      <div class="winner-big" style="color:${winner.color}">${winner.name} wins!</div>
+      <div class="winner-sub">with ${winner.score} points</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Final scores</div>
+      <div class="score-grid">${scoreCards}</div>
+    </div>
+    <div class="btn-row" style="justify-content:center;">
+      <button class="btn btn-y" onclick="location.reload()">Play again</button>
+    </div>`);
+}
+
+const params = new URLSearchParams(location.search);
+const autoRoom = params.get('room');
+if (autoRoom) {
+  render(`
+    <div class="card">
+      <div class="card-title">Join room <span style="color:#f0c040">${autoRoom}</span></div>
+      <input type="text" id="nameIn" placeholder="Your name" maxlength="20"/>
+      <div id="err"></div>
+      <div class="btn-row"><button class="btn btn-y" onclick="connectWS(document.getElementById('nameIn').value.trim(),'${autoRoom}')">Join</button></div>
+    </div>`);
+} else {
+  showLobbyJoin();
+}
+</script>
+</body>
+</html>
